@@ -1,0 +1,110 @@
+{
+  "_comment": "Evidence register for Motion Coach drill specs. Each drill rubric item references a REF-* id here. status: draft until expert sign-off. Compiled via deep-research run wf_3c2f6517-885 on 2026-06-25.",
+  "evidenceLevels": {
+    "research-backed": "Supported by peer-reviewed primary research or systematic review, verified in this pass.",
+    "preliminary": "Supported only by preprints / small-n / non-3D-mocap criterion. Use with caution.",
+    "coaching-consensus": "Widely taught coaching standard, but not tied to a verified numeric study here.",
+    "heuristic-unverified": "A reasonable engineering guess. No source. Requires expert sign-off before trusting."
+  },
+  "references": {
+    "REF-MARKERLESS-TOLERANCE": {
+      "claim": "Lower-limb joint angles from pose estimation should use tolerance bands of several degrees (>=±5 in-plane), not single cut-points; even marker-based mocap carries ~2-5 deg intrinsic error.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Markerless 3D Motion Capture vs Marker-Based Systems for Lower-Limb Biomechanics: A Systematic Review. Sensors (MDPI) 2026, 26(12):3956. https://www.mdpi.com/1424-8220/26/12/3956",
+        "Needham et al. 2022, Accuracy of multi-view markerless vs marker-based motion capture. J Biomechanics. https://www.sciencedirect.com/science/article/pii/S0021929022003797"
+      ]
+    },
+    "REF-MULTICAM-GAP": {
+      "claim": "The strong accuracy figures in the literature come from MULTI-camera markerless systems; single-camera (our case) has depth ambiguity and should budget larger error / wider bands.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Needham et al. 2022 (9 video + marker cameras). https://www.sciencedirect.com/science/article/pii/S0021929022003797",
+        "Aleksic, Kanevsky et al. 2024, two-camera MMPose CMJ validation. Sensors 24(20):6624. https://www.mdpi.com/1424-8220/24/20/6624"
+      ]
+    },
+    "REF-SINGLECAM-KNEE": {
+      "claim": "Single-camera BlazePose knee-angle validity is task-dependent: pooled ICC 0.982 (MAE ~7 deg) but squat-specific ICC ~0.773 and sit-to-stand ~0.632. PRELIMINARY (unreviewed preprint, n=15, 2D-video criterion, not 3D mocap).",
+      "evidenceLevel": "preliminary",
+      "citations": [
+        "JMIR preprint #102399. https://preprints.jmir.org/preprint/102399"
+      ]
+    },
+    "REF-LANDING-BIAS": {
+      "claim": "Markerless systematically OVERestimates jump height / CoM velocity but stays reliable (ICC > 0.91). Treat landing/jump metrics as directionally biased, not unbiased.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Aleksic, Kanevsky et al. 2024. Sensors 24(20):6624. https://www.mdpi.com/1424-8220/24/20/6624"
+      ]
+    },
+    "REF-REPCOUNT": {
+      "claim": "On-device single-camera rep counting reached 98.89% in a narrow live demo but 86.04% on diverse pre-recorded video; demo figures are not generalizable and tested exercises are not our 7 drills.",
+      "evidenceLevel": "preliminary",
+      "citations": [
+        "Puioio 2023, arXiv:2308.02420. https://arxiv.org/abs/2308.02420",
+        "Movement-event detection from video (review). Sports Medicine. https://link.springer.com/article/10.1007/s40279-020-01382-w"
+      ]
+    },
+    "REF-FACEVIS": {
+      "claim": "BlazePose relies on a face/person detector and miscounts / produces bad keypoints when the subject's face is not visible or is angled away. Camera-orientation guidance and low-visibility handling are required.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Puioio 2023, arXiv:2308.02420. https://arxiv.org/abs/2308.02420",
+        "Bazarevsky et al. 2020, BlazePose. arXiv:2006.10204"
+      ]
+    },
+    "REF-LESS-KNEEFLEX": {
+      "claim": "Soft-landing checkpoint: knee flexion at initial ground contact NOT greater than 30 deg is scored as an error (stiff landing). Sagittal, in-plane, single-camera-measurable. Item-level research-backed; HEURISTIC as a continuous tolerance and when transferred from drop-vertical-jump to badminton landings.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Padua et al. 2009, The Landing Error Scoring System (JUMP-ACL). Am J Sports Med 37(10):1996-2002. https://pubmed.ncbi.nlm.nih.gov/19726623/"
+      ]
+    },
+    "REF-LESS-CATEGORIES": {
+      "claim": "Grade landings by LESS categories (excellent <=4; good >4-5; moderate >5-6; poor >6) rather than one threshold; concurrent validity vs 3D mocap established. A >=5-error cutoff predicted ACL injury (86% sens, 64% spec, 10.7x RR) but is population-specific (elite-youth soccer) and not universally replicated.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Padua et al. 2009. https://pubmed.ncbi.nlm.nih.gov/19726623/",
+        "Padua et al. 2015, J Athletic Training 50(6):589 (predictive cutoff). PMC4527442",
+        "Hanzlikova & Hebert-Losier 2020, systematic review. Sports Health 12(2). https://pmc.ncbi.nlm.nih.gov/articles/PMC7040940/"
+      ]
+    },
+    "REF-LESS-RELIABILITY": {
+      "claim": "Overall LESS score has good-to-excellent rater reliability (intrarater ICC 0.82-0.99; interrater 0.83-0.92). Overall/grouped scoring is more valid than single items. Automated pose scoring is NOT yet validated against trained raters.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Hanzlikova & Hebert-Losier 2020, systematic review. PMC7040940. https://pmc.ncbi.nlm.nih.gov/articles/PMC7040940/"
+      ]
+    },
+    "REF-LESSM": {
+      "claim": "Modified LESS (LESS-M) grades a LATERAL single-leg landing from 2D frontal+sagittal video (closer to net-lunge), but only MODERATE validity (knee valgus rho=0.425) and no predictive cutoff. Frontal-plane (valgus) items rely on signals single-camera pose measures poorly.",
+      "evidenceLevel": "preliminary",
+      "citations": [
+        "Validity of the Modified LESS 2025. Physical Therapy in Sport. https://www.sciencedirect.com/science/article/pii/S1466853X25001130",
+        "LESS-M youth basketball follow-up 2026. https://www.sciencedirect.com/science/article/pii/S1466853X26000581"
+      ]
+    },
+    "REF-BADMINTON-LUNGE": {
+      "claim": "A split step before a forehand forecourt lunge increases hip abduction/rotation but DECREASES knee flexion at foot contact (stiffer touchdown). Sagittal knee-flexion is measurable; hip rotation/abduction are out-of-plane and not reliably single-camera-measurable. Single small male-only 3D study.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Forehand lunge / split-step kinematics. Bioengineering (MDPI) 2024, 11(5):501. https://www.mdpi.com/2306-5354/11/5/501"
+      ]
+    },
+    "REF-SQUAT-TRUNK-TIBIA": {
+      "claim": "Trunk lean and tibia (shin) inclination must be interpreted JOINTLY: upright trunk increases knee-flexion moment while upright tibia decreases it. Squat-load logic must combine BOTH signals; shin angle alone does NOT map to knee load.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Straub & Powers 2024, A Biomechanical Review of the Squat Exercise. Int J Sports Phys Ther 19(4):490-501. https://pmc.ncbi.nlm.nih.gov/articles/PMC10987311/",
+        "Lorenzetti et al. 2021 (PMID 33596542); Bagchi/Sayers et al. 2023 (PMC10518215)"
+      ]
+    },
+    "REF-SHOOTING-REDUNDANCY": {
+      "claim": "There is NO single correct joint configuration for shooting; many shoulder/elbow/wrist combinations produce optimal release. Argues against rigid joint-angle thresholds; grade consistency + gross BEEF checkpoints (coaching-consensus), not prescribed angles.",
+      "evidenceLevel": "research-backed",
+      "citations": [
+        "Okubo & Hubbard 2015, Kinematics of Arm Joint Motions in Basketball Shooting. Procedia Engineering 112:443-448. https://www.sciencedirect.com/science/article/pii/S187770581501471X"
+      ]
+    }
+  }
+}
