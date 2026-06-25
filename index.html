@@ -271,7 +271,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
     <div class="track" id="trackBadge"><span class="dot"></span><span class="lbl" id="trackLbl">Looking for you</span></div>
     <div class="anglehint" id="angleHint">Camera: side on</div>
     <video id="video" playsinline muted></video>
-    <canvas id="overlay"></canvas>
+    <canvas id="overlayCanvas"></canvas>
   </section>
 
   <!-- live feedback -->
@@ -758,7 +758,7 @@ let running=false, rafId=0, lastVideoTime=-1;
 
 const $=id=>document.getElementById(id);
 const screens={home:$('home'), coach:$('coach'), summary:$('summary')};
-const video=$('video'), canvas=$('overlay'), ctx=canvas.getContext('2d');
+const video=$('video'), canvas=$('overlayCanvas'), ctx=canvas.getContext('2d');
 
 const STATUS={
   good:{cls:'good', ic:'✓', word:'Good'},
