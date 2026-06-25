@@ -103,7 +103,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   aspect-ratio:var(--ar,3/4);max-height:66vh;
 }
 .stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%}
-.stage video{object-fit:cover;transform:scaleX(-1)} /* selfie mirror */
+.stage video{object-fit:cover}
+.stage.mirror video{transform:scaleX(-1)} /* selfie mirror — front camera only */
 .stage canvas{pointer-events:none}
 
 /* Tracking badge over the stage */
@@ -123,6 +124,24 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   padding:6px 10px;border-radius:10px;font-size:.78rem;font-weight:600;color:var(--ink-dim);
   background:rgba(8,12,20,.72);backdrop-filter:blur(6px);border:1px solid var(--line);
 }
+
+/* Camera flip button top-right of stage */
+.camflip{
+  position:absolute;right:12px;top:12px;z-index:3;
+  display:inline-flex;align-items:center;gap:6px;min-height:36px;
+  padding:7px 12px;border-radius:999px;font-size:.8rem;font-weight:700;color:var(--ink);
+  background:rgba(8,12,20,.72);backdrop-filter:blur(6px);border:1px solid var(--line);
+}
+.camflip:hover{border-color:var(--accent)}
+
+/* Transient toast over the stage */
+.toast{
+  position:absolute;left:50%;bottom:52px;transform:translateX(-50%) translateY(6px);z-index:4;
+  max-width:80%;padding:8px 14px;border-radius:10px;font-size:.82rem;font-weight:600;
+  color:var(--ink);background:rgba(8,12,20,.88);border:1px solid var(--line);
+  opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ----- SEGMENT: Pre-camera panel ----- */
 .pre-panel{
@@ -270,8 +289,10 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
   <section class="stage" id="stage" aria-label="Camera view with skeleton overlay">
     <div class="track" id="trackBadge"><span class="dot"></span><span class="lbl" id="trackLbl">Looking for you</span></div>
     <div class="anglehint" id="angleHint">Camera: side on</div>
+    <button class="camflip" id="flipBtn" type="button" aria-label="Switch camera">⟲ Flip camera</button>
     <video id="video" playsinline muted></video>
     <canvas id="overlayCanvas"></canvas>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </section>
 
   <!-- live feedback -->
@@ -858,6 +879,8 @@ const SPORTS=[
 let active=null, state=null;
 let landmarker=null, drawer=null, stream=null;
 let running=false, rafId=0, lastVideoTime=-1;
+let cameras=[], camIndex=0;
+let facingMode = (()=>{ try{ return localStorage.getItem('mc.facing')==='environment' ? 'environment' : 'user'; }catch(e){ return 'user'; } })();
 
 const $=id=>document.getElementById(id);
 const screens={home:$('home'), coach:$('coach'), summary:$('summary')};
@@ -952,16 +975,89 @@ async function startCamera(){
     showOverlay('Loading the pose model', '<p>This step needs internet the first time. A few seconds.</p>', false);
     await ensureModel();
     showOverlay('Starting the camera', '<p>Allow camera access when your browser asks.</p>', false);
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
-    video.srcObject=stream;
-    await video.play();
-    sizeStage();
+    await acquireStream({video:{facingMode:{ideal:facingMode}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
     hideOverlay();
     resetSmoothing();
     running=true; lastVideoTime=-1;
     screens.coach.className='screen coach-live is-active';
     loop();
+    refreshCameras();   // device list (labels need camera permission, now granted)
   }catch(err){ handleStartError(err); }
+}
+
+/* ===== SEGMENT: Camera stream + front/back toggle ===== */
+// Acquire (or re-acquire) the stream, releasing any previous tracks first, then
+// sync mirroring to the camera's true facing.
+async function acquireStream(constraints){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  stream=await navigator.mediaDevices.getUserMedia(constraints);
+  video.srcObject=stream;
+  await video.play();
+  readFacing();        // learn whether this is the front or back camera
+  applyMirror();       // front = selfie mirror; back = no mirror
+  sizeStage();
+  lastVideoTime=-1;    // force the loop to process the first frame of the new stream
+}
+
+// Determine the active camera's facing from track settings, falling back to the
+// device label when the browser doesn't report facingMode (common on desktop).
+function readFacing(){
+  try{
+    const tr=stream && stream.getVideoTracks()[0];
+    const s=tr && tr.getSettings();
+    if(s && s.facingMode){ facingMode=s.facingMode; return; }
+    const label=((tr && tr.label) || '').toLowerCase();
+    if(/back|rear|environment/.test(label)) facingMode='environment';
+    else if(/front|user|face|selfie/.test(label)) facingMode='user';
+    // else: keep current value
+  }catch(e){ /* settings unavailable; keep current */ }
+}
+
+function applyMirror(){
+  $('stage').classList.toggle('mirror', facingMode!=='environment');
+}
+
+// Enumerate video inputs so the flip button can cycle real devices (desktops
+// with several webcams, not just phones with front/back facing modes).
+async function refreshCameras(){
+  try{
+    const devs=await navigator.mediaDevices.enumerateDevices();
+    cameras=devs.filter(d=>d.kind==='videoinput');
+    const activeId=stream && stream.getVideoTracks()[0] && stream.getVideoTracks()[0].getSettings().deviceId;
+    const i=cameras.findIndex(c=>c.deviceId===activeId);
+    if(i>=0) camIndex=i;
+  }catch(e){ cameras=[]; }   // enumeration blocked; switchCamera falls back to a facing swap
+}
+
+// Flip to the next camera. Cycles enumerated devices when available; otherwise
+// best-effort front/back facingMode swap. Rolls back on failure.
+async function switchCamera(){
+  if(!running) return;
+  await refreshCameras();
+  if(cameras.length===1){ showToast('This device has only one camera'); return; }
+  const prevFacing=facingMode, prevIndex=camIndex;
+  try{
+    if(cameras.length>1){
+      camIndex=(camIndex+1)%cameras.length;
+      await acquireStream({video:{deviceId:{exact:cameras[camIndex].deviceId}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    } else {
+      facingMode = facingMode==='environment' ? 'user' : 'environment';
+      await acquireStream({video:{facingMode:{exact:facingMode}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    }
+    try{ localStorage.setItem('mc.facing', facingMode); }catch(e){}
+  }catch(err){
+    facingMode=prevFacing; camIndex=prevIndex;
+    showToast('Could not switch camera');
+    try{ await acquireStream({video:{facingMode:{ideal:prevFacing}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
+    catch(e){ handleStartError(e); }
+  }
+}
+
+let toastTimer=0;
+function showToast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'), 2400);
 }
 
 function sizeStage(){
@@ -1008,7 +1104,7 @@ function loop(){
 function onResults(res){
   ctx.save();
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.translate(canvas.width,0); ctx.scale(-1,1);   // mirror to match the selfie video
+  if(facingMode!=='environment'){ ctx.translate(canvas.width,0); ctx.scale(-1,1); }   // mirror only for the front (selfie) camera
   const has=res && res.landmarks && res.landmarks.length;
   if(has){
     const n=res.landmarks[0];
@@ -1102,6 +1198,7 @@ function hideOverlay(){ $('overlay').classList.remove('show'); }
 /* ===== SEGMENT: Wire controls ===== */
 $('backBtn').addEventListener('click', backHome);
 $('startBtn').addEventListener('click', startCamera);
+$('flipBtn').addEventListener('click', switchCamera);
 $('finishBtn').addEventListener('click', finishSet);
 $('resetBtn').addEventListener('click', ()=>{
   state=active.init(); $('countNum').textContent='0'; $('flash').classList.remove('show'); resetSmoothing();
