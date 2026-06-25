@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Motion Coach — PE form and technique</title>
+
+<!-- ============================================================= -->
+<!-- SECTION: STYLE                                                 -->
+<!-- ============================================================= -->
+<style>
+/* ----- SEGMENT: Design tokens ----- */
+:root{
+  --bg:#0d0f14;
+  --bg2:#10141d;
+  --panel:#171c28;
+  --panel2:#1d2433;
+  --line:#2a3346;
+  --ink:#eef2f7;
+  --ink-dim:#9aa6b8;
+  --ink-faint:#6b7587;
+  --accent:#5bd1ff;
+  --good:#39d98a;
+  --adjust:#ffb020;
+  --off:#ff5d5d;
+  --wait:#5bd1ff;
+  --radius:16px;
+  --tap:48px;
+}
+
+/* ----- SEGMENT: Reset and base ----- */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(1200px 700px at 50% -10%, #15203a 0%, var(--bg) 55%) fixed;
+  color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding:max(env(safe-area-inset-top),14px) 14px max(env(safe-area-inset-bottom),18px);
+}
+.wrap{width:100%;max-width:760px;margin:0 auto}
+
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ----- SEGMENT: Screen switching ----- */
+.screen{display:none}
+.screen.is-active{display:block}
+
+/* ----- SEGMENT: Masthead ----- */
+.masthead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 2px 18px}
+.masthead h1{font-size:1.55rem;font-weight:800;letter-spacing:-0.02em}
+.masthead .tag{color:var(--ink-dim);font-size:.9rem;font-weight:600}
+.brandline{display:inline-block;width:34px;height:4px;border-radius:3px;
+  background:linear-gradient(90deg,var(--accent),var(--good));margin:0 2px 12px}
+
+/* ----- SEGMENT: Honest note ----- */
+.note{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin:0 0 20px;font-size:.9rem;color:var(--ink-dim);
+}
+.note b{color:var(--ink)}
+.note .row{display:flex;gap:10px;margin-top:8px}
+.note .row span:first-child{flex:0 0 64px;color:var(--ink-faint);font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+
+/* ----- SEGMENT: Home cards ----- */
+.sport{margin:0 0 22px}
+.sport h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-faint);
+  font-weight:700;margin:0 2px 10px}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.movecard{
+  display:flex;flex-direction:column;gap:6px;text-align:left;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;min-height:104px;transition:transform .12s ease,border-color .12s ease;
+}
+.movecard:hover{transform:translateY(-2px);border-color:var(--accent)}
+.movecard .name{font-size:1.08rem;font-weight:700;letter-spacing:-0.01em}
+.movecard .facing{font-size:.8rem;color:var(--accent);font-weight:600}
+.movecard .blurb{font-size:.84rem;color:var(--ink-dim)}
+.movecard .go{margin-top:auto;font-size:.82rem;color:var(--ink-faint);font-weight:700}
+
+/* ============================================================= */
+/* SEGMENT: Coach screen                                          */
+/* ============================================================= */
+.coachbar{display:flex;align-items:center;gap:12px;margin:0 2px 14px}
+.iconbtn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:var(--tap);padding:0 16px;border-radius:12px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  font-weight:700;font-size:.92rem;
+}
+.iconbtn:hover{border-color:var(--accent)}
+.coachbar .titleblock{flex:1;min-width:0}
+.coachbar .titleblock .t{font-size:1.12rem;font-weight:800;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coachbar .titleblock .s{font-size:.82rem;color:var(--accent);font-weight:600}
+
+/* ----- SEGMENT: Stage (video + overlay) ----- */
+.stage{
+  position:relative;width:100%;margin:0 auto;border-radius:var(--radius);overflow:hidden;
+  background:#05070b;border:1px solid var(--line);
+  aspect-ratio:var(--ar,3/4);max-height:66vh;
+}
+.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.stage video{object-fit:cover;transform:scaleX(-1)} /* selfie mirror */
+.stage canvas{pointer-events:none}
+
+/* Tracking badge over the stage */
+.track{
+  position:absolute;left:12px;top:12px;z-index:3;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 11px;border-radius:999px;font-size:.8rem;font-weight:700;
+  background:rgba(8,12,20,.72);backdrop-filter:blur(6px);border:1px solid var(--line);
+}
+.track .dot{width:9px;height:9px;border-radius:50%;background:var(--off)}
+.track.ok .dot{background:var(--good)}
+.track .lbl{color:var(--ink-dim)}
+
+/* Camera-angle reminder bottom of stage */
+.anglehint{
+  position:absolute;left:12px;bottom:12px;z-index:3;
+  padding:6px 10px;border-radius:10px;font-size:.78rem;font-weight:600;color:var(--ink-dim);
+  background:rgba(8,12,20,.72);backdrop-filter:blur(6px);border:1px solid var(--line);
+}
+
+/* ----- SEGMENT: Pre-camera panel ----- */
+.pre-panel{
+  display:none;flex-direction:column;align-items:center;gap:16px;text-align:center;
+  padding:34px 20px;
+}
+.coach-pre .pre-panel{display:flex}
+.coach-pre .stage,.coach-pre .live-panel{display:none}
+.pre-panel .step{font-size:.92rem;color:var(--ink-dim);max-width:38ch}
+.bigbtn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:56px;padding:0 26px;border-radius:14px;font-weight:800;font-size:1.04rem;
+  color:#06121a;background:linear-gradient(180deg,#7fe0ff,var(--accent));
+  box-shadow:0 8px 22px rgba(91,209,255,.22);
+}
+.bigbtn:hover{filter:brightness(1.05)}
+.bigbtn.ghost{color:var(--ink);background:var(--panel2);border:1px solid var(--line);box-shadow:none}
+
+/* ----- SEGMENT: Live feedback panel ----- */
+.live-panel{display:none;margin-top:14px}
+.coach-live .live-panel{display:block}
+
+.readout{display:flex;gap:12px;align-items:stretch}
+.count{
+  flex:0 0 116px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 8px;
+}
+.count .num{font-size:3.2rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.03em}
+.count.bump .num{animation:bump .32s ease}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.18);color:var(--good)}100%{transform:scale(1)}}
+.count .cap{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-top:6px;font-weight:700}
+
+.statusbox{flex:1;border-radius:var(--radius);border:1px solid var(--line);background:var(--panel);
+  display:flex;flex-direction:column;justify-content:center;gap:8px;padding:14px 16px;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:9px;align-self:flex-start;
+  padding:6px 13px;border-radius:999px;font-weight:800;font-size:.86rem;
+  background:var(--panel2);color:var(--ink)}
+.chip .ic{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;
+  border-radius:50%;font-size:.8rem;font-weight:900;color:#06121a;background:var(--wait)}
+.chip.good{background:rgba(57,217,138,.14)} .chip.good .ic{background:var(--good)}
+.chip.adjust{background:rgba(255,176,32,.14)} .chip.adjust .ic{background:var(--adjust)}
+.chip.off{background:rgba(255,93,93,.14)} .chip.off .ic{background:var(--off)}
+.chip.wait{background:rgba(91,209,255,.12)} .chip.wait .ic{background:var(--wait)}
+.cue{font-size:1.42rem;font-weight:800;letter-spacing:-0.01em;color:var(--ink)}
+.phase{font-size:.82rem;color:var(--ink-dim);font-weight:600}
+
+/* attempt flash line */
+.flash{margin-top:12px;border-radius:12px;border:1px dashed var(--line);background:var(--bg2);
+  padding:10px 14px;font-size:.88rem;color:var(--ink-dim);min-height:0;display:none}
+.flash.show{display:block;animation:fade .4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+.flash b{color:var(--ink)}
+
+/* gauge */
+.gauge{margin-top:12px;display:none}
+.gauge.show{display:block}
+.gauge .lbl{display:flex;justify-content:space-between;font-size:.74rem;color:var(--ink-faint);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.gauge .track-g{position:relative;height:14px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.gauge .band{position:absolute;top:0;bottom:0;background:rgba(57,217,138,.28);border-left:2px solid var(--good);border-right:2px solid var(--good)}
+.gauge .marker{position:absolute;top:-3px;width:6px;height:20px;border-radius:3px;background:var(--ink);transform:translateX(-50%);transition:left .08s linear}
+
+/* live controls */
+.controls{display:flex;gap:10px;margin-top:16px}
+.controls .iconbtn{flex:1}
+.controls .finish{background:linear-gradient(180deg,#ff7a7a,var(--off));color:#1a0606;border:none;font-weight:800}
+.controls .finish:hover{filter:brightness(1.05)}
+
+/* ----- SEGMENT: Error / loading overlay ----- */
+.overlay{display:none;position:fixed;inset:0;z-index:40;background:rgba(6,9,15,.86);
+  align-items:center;justify-content:center;padding:24px}
+.overlay.show{display:flex}
+.sheet{max-width:440px;width:100%;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius);padding:24px}
+.sheet h3{font-size:1.15rem;font-weight:800;margin-bottom:10px}
+.sheet p{color:var(--ink-dim);font-size:.92rem;margin-bottom:8px}
+.sheet code{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.85em;color:var(--accent)}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);
+  animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sheet .iconbtn{margin-top:14px;width:100%}
+
+/* ============================================================= */
+/* SEGMENT: Summary screen                                        */
+/* ============================================================= */
+.summary{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.summary .head{font-size:1.35rem;font-weight:800;letter-spacing:-0.01em;margin-bottom:4px}
+.summary .sub{color:var(--ink-dim);font-size:.9rem;margin-bottom:18px}
+.stats{display:flex;flex-direction:column;gap:1px;background:var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.stats .stat{display:flex;justify-content:space-between;background:var(--panel2);padding:12px 15px;font-size:.92rem}
+.stats .stat .k{color:var(--ink-dim)}
+.stats .stat .v{font-weight:800;font-variant-numeric:tabular-nums}
+.focus{border:1px solid var(--good);background:rgba(57,217,138,.08);border-radius:12px;padding:15px 16px;margin-bottom:18px}
+.focus .h{font-size:.76rem;text-transform:uppercase;letter-spacing:.1em;color:var(--good);font-weight:800;margin-bottom:6px}
+.focus .t{font-size:1.06rem;font-weight:700;color:var(--ink)}
+.focus .n{font-size:.9rem;color:var(--ink-dim);margin-top:6px}
+.summary .controls{margin-top:0}
+
+.foot{margin-top:26px;text-align:center;color:var(--ink-faint);font-size:.78rem}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<!-- ============================================================= -->
+<!-- SECTION: HOME                                                 -->
+<!-- ============================================================= -->
+<main id="home" class="screen is-active">
+  <div class="masthead">
+    <h1>Motion Coach</h1>
+    <span class="tag">form and technique, from your camera</span>
+  </div>
+  <div class="brandline" aria-hidden="true"></div>
+
+  <section class="note" aria-label="What this tool can and cannot see">
+    <b>Read this first.</b> The camera reads where your body is, joint by joint. It gives you a cue while you move and a short report at the end.
+    <div class="row"><span>It sees</span><span>your joints and angles: depth, extension, reach, how level you are.</span></div>
+    <div class="row"><span>It cannot</span><span>see the ball, the shuttle, or how clean your contact was. Mime the action and it reads your body.</span></div>
+    <div class="row"><span>Works best</span><span>one student in frame, whole body visible, good light, the camera angle each drill asks for.</span></div>
+  </section>
+
+  <div id="moveList"><!-- cards rendered by script --></div>
+</main>
+
+<!-- ============================================================= -->
+<!-- SECTION: COACH                                                -->
+<!-- ============================================================= -->
+<main id="coach" class="screen coach-pre">
+  <div class="coachbar">
+    <button class="iconbtn" id="backBtn" aria-label="Back to drills">← Drills</button>
+    <div class="titleblock">
+      <div class="t" id="coachTitle">Drill</div>
+      <div class="s" id="coachSport">Sport</div>
+    </div>
+  </div>
+
+  <!-- pre-camera -->
+  <section class="pre-panel" aria-label="Set up">
+    <div class="step" id="setupHint">Set up hint.</div>
+    <button class="bigbtn" id="startBtn">▶ Start camera</button>
+    <div class="step" style="font-size:.82rem;color:var(--ink-faint)">Your video stays on this device. Nothing is recorded or sent.</div>
+  </section>
+
+  <!-- stage -->
+  <section class="stage" id="stage" aria-label="Camera view with skeleton overlay">
+    <div class="track" id="trackBadge"><span class="dot"></span><span class="lbl" id="trackLbl">Looking for you</span></div>
+    <div class="anglehint" id="angleHint">Camera: side on</div>
+    <video id="video" playsinline muted></video>
+    <canvas id="overlay"></canvas>
+  </section>
+
+  <!-- live feedback -->
+  <section class="live-panel" aria-label="Live feedback">
+    <div class="readout">
+      <div class="count" id="countBox">
+        <div class="num" id="countNum">0</div>
+        <div class="cap" id="countCap">reps</div>
+      </div>
+      <div class="statusbox">
+        <span class="chip wait" id="chip"><span class="ic" id="chipIc">•</span><span id="chipWord">Ready</span></span>
+        <div class="cue" id="cue">Step into frame</div>
+        <div class="phase" id="phase">—</div>
+      </div>
+    </div>
+
+    <div class="gauge" id="gauge">
+      <div class="lbl"><span id="gaugeL">Deep</span><span id="gaugeR">Standing</span></div>
+      <div class="track-g"><div class="band" id="gaugeBand"></div><div class="marker" id="gaugeMarker"></div></div>
+    </div>
+
+    <div class="flash" id="flash"></div>
+
+    <div class="controls">
+      <button class="iconbtn" id="resetBtn">↺ Reset count</button>
+      <button class="iconbtn finish" id="finishBtn">Finish set</button>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================= -->
+<!-- SECTION: SUMMARY                                              -->
+<!-- ============================================================= -->
+<main id="summary" class="screen">
+  <div class="summary">
+    <div class="head" id="sumHead">Set complete</div>
+    <div class="sub" id="sumSub"></div>
+    <div class="stats" id="sumStats"></div>
+    <div class="focus">
+      <div class="h">Work on this next</div>
+      <div class="t" id="sumFocus"></div>
+      <div class="n" id="sumNext"></div>
+    </div>
+    <div class="controls">
+      <button class="iconbtn" id="againBtn">↺ Go again</button>
+      <button class="bigbtn ghost" id="chooseBtn" style="flex:1">Choose another</button>
+    </div>
+  </div>
+  <div class="foot">Cues come from body geometry, not a coach. Use them as a prompt, then check with your teacher.</div>
+</main>
+
+</div><!-- /wrap -->
+
+<!-- ============================================================= -->
+<!-- SECTION: OVERLAY (loading + errors)                           -->
+<!-- ============================================================= -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="spinner" id="ovSpinner"></div>
+    <h3 id="ovTitle">Loading</h3>
+    <div id="ovBody"></div>
+    <button class="iconbtn" id="ovClose" style="display:none">Close</button>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- SECTION: SCRIPT                                                -->
+<!-- ============================================================= -->
+<script type="module">
+import {
+  FilesetResolver,
+  PoseLandmarker,
+  DrawingUtils
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10/vision_bundle.mjs";
+
+/* ===== SEGMENT: Landmark indices (MediaPipe Pose, 33 points) ===== */
+const LM = {
+  NOSE:0, L_SH:11, R_SH:12, L_EL:13, R_EL:14, L_WR:15, R_WR:16,
+  L_HIP:23, R_HIP:24, L_KN:25, R_KN:26, L_AN:27, R_AN:28
+};
+
+/* ===== SEGMENT: Maths helpers ===== */
+function angle3(a,b,c){
+  // angle at vertex b, in degrees, using 3D world coordinates
+  const v1=[a.x-b.x, a.y-b.y, a.z-b.z];
+  const v2=[c.x-b.x, c.y-b.y, c.z-b.z];
+  const dot=v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2];
+  const m1=Math.hypot(v1[0],v1[1],v1[2]);
+  const m2=Math.hypot(v2[0],v2[1],v2[2]);
+  if(m1===0||m2===0) return null;
+  let c0=dot/(m1*m2); c0=Math.max(-1,Math.min(1,c0));
+  return Math.acos(c0)*180/Math.PI;
+}
+const avg=(a,b)=> (a==null?b:(b==null?a:(a+b)/2));
+const clamp01=x=> Math.max(0,Math.min(1,x));
+const pct=(part,whole)=> whole? Math.round(100*part/whole):0;
+
+/* ===== SEGMENT: Smoothing (exponential moving average) ===== */
+const smoothStore={};
+function ema(key,val,alpha=0.5){
+  if(val==null) return smoothStore[key] ?? null;
+  const prev=smoothStore[key];
+  const next = prev==null ? val : prev*(1-alpha)+val*alpha;
+  smoothStore[key]=next; return next;
+}
+function resetSmoothing(){ for(const k in smoothStore) delete smoothStore[k]; }
+
+/* ===== SEGMENT: Per-frame metrics ===== */
+function computeMetrics(n, w){
+  const vis = i => (n[i].visibility ?? 1);
+  const m = {};
+  // joint angles from world coordinates (robust to camera framing)
+  m.kneeL = angle3(w[LM.L_HIP], w[LM.L_KN], w[LM.L_AN]);
+  m.kneeR = angle3(w[LM.R_HIP], w[LM.R_KN], w[LM.R_AN]);
+  m.elbowL = angle3(w[LM.L_SH], w[LM.L_EL], w[LM.L_WR]);
+  m.elbowR = angle3(w[LM.R_SH], w[LM.R_EL], w[LM.R_WR]);
+  m.kneeAvg = avg(m.kneeL, m.kneeR);
+  // positions from normalised image coordinates (camera relative; y grows downward)
+  m.nNose=n[LM.NOSE];
+  m.nWrL=n[LM.L_WR]; m.nWrR=n[LM.R_WR];
+  m.nElL=n[LM.L_EL]; m.nElR=n[LM.R_EL];
+  m.nAnL=n[LM.L_AN]; m.nAnR=n[LM.R_AN];
+  m.shoulderMidY=(n[LM.L_SH].y+n[LM.R_SH].y)/2;
+  m.hipMidY=(n[LM.L_HIP].y+n[LM.R_HIP].y)/2;
+  m.shoulderWidth=Math.max(Math.abs(n[LM.L_SH].x-n[LM.R_SH].x), 0.04);
+  // torso lean from vertical, degrees (0 = upright)
+  const sx=(n[LM.L_SH].x+n[LM.R_SH].x)/2, sy=m.shoulderMidY;
+  const hx=(n[LM.L_HIP].x+n[LM.R_HIP].x)/2, hy=m.hipMidY;
+  m.torsoLean=Math.abs(Math.atan2(sx-hx, hy-sy))*180/Math.PI;
+  // whole-body visible enough to coach on
+  m.bodyVisible=[LM.L_SH,LM.R_SH,LM.L_HIP,LM.R_HIP,LM.L_KN,LM.R_KN].every(i=>vis(i)>0.4);
+  return m;
+}
+function smoothMetrics(m){
+  m.kneeAvg=ema('kneeAvg',m.kneeAvg);
+  m.kneeL=ema('kneeL',m.kneeL); m.kneeR=ema('kneeR',m.kneeR);
+  m.elbowL=ema('elbowL',m.elbowL); m.elbowR=ema('elbowR',m.elbowR);
+  return m;
+}
+
+/* ============================================================= */
+/* SEGMENT: Movement modules                                     */
+/* Each module owns its rep/attempt logic and its end report.    */
+/* update(m, s) -> {status, cue, phase, repDelta}                */
+/* ============================================================= */
+
+const WAIT=(cue)=>({status:'waiting',cue,phase:'—',repDelta:0});
+
+/* ----- Grading helpers ----- */
+function focusFrom(pairs){
+  // pairs: [{bad:count, text, next}] in priority order; pick first with bad>0
+  for(const p of pairs){ if(p.bad>0) return {text:p.text, next:p.next}; }
+  return null;
+}
+
+/* ---------- SQUAT ---------- */
+const SQUAT={
+  id:'squat', sport:'Fitness', label:'Squat', type:'rep', facing:'Side on',
+  blurb:'Depth, even legs, chest up.',
+  setup:'Stand side on to the camera, a few steps back, whole body in frame. Squat at your own pace.',
+  unit:'reps',
+  gauge:{leftLabel:'Deep', rightLabel:'Standing', min:60, max:180, bandLow:70, bandHigh:100, read:m=>m.kneeAvg},
+  init:()=>({count:0, phase:'up', minKnee:180, minKneeL:180, minKneeR:180, maxLean:0, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible || m.kneeAvg==null) return WAIT('Step into frame');
+    const k=m.kneeAvg;
+    if(s.phase==='down'){
+      s.minKnee=Math.min(s.minKnee,k);
+      s.minKneeL=Math.min(s.minKneeL, m.kneeL ?? 180);
+      s.minKneeR=Math.min(s.minKneeR, m.kneeR ?? 180);
+      s.maxLean=Math.max(s.maxLean, m.torsoLean);
+    }
+    let repDelta=0;
+    if(s.phase==='up' && k<150){
+      s.phase='down'; s.minKnee=k; s.minKneeL=m.kneeL ?? 180; s.minKneeR=m.kneeR ?? 180; s.maxLean=m.torsoLean;
+    } else if(s.phase==='down' && k>160){
+      const depthGood=s.minKnee<=105, tooShallow=s.minKnee>120;
+      const even=Math.abs(s.minKneeL-s.minKneeR)<=22;
+      const upright=s.maxLean<=50;
+      s.records.push({depthGood,tooShallow,even,upright});
+      s.count++; repDelta=1; s.phase='up'; s.minKnee=180;
+    }
+    let status,cue,phase;
+    if(s.phase==='up'){ status='waiting'; cue='Bend and squat'; phase='Standing'; }
+    else{
+      phase='Going down';
+      if(k>=60 && k<=100){ status='good'; cue='Good depth — drive up'; }
+      else if(k>100 && k<=130){ status='adjust'; cue='Lower'; }
+      else if(k<60){ status='adjust'; cue='Deep — stay controlled'; }
+      else{ status='waiting'; cue='Keep going down'; }
+      if(m.torsoLean>50){ status='adjust'; cue='Chest up'; }
+    }
+    return {status,cue,phase,repDelta};
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No full squats counted yet.','Stand side on, sink until your thighs near parallel, then stand tall.');
+    const good=R.filter(r=>r.depthGood).length;
+    const f=focusFrom([
+      {bad:R.filter(r=>r.tooShallow).length, text:'Sink deeper.', next:'Lower until your thighs reach about parallel each rep.'},
+      {bad:R.filter(r=>!r.upright).length, text:'Keep your chest up.', next:'Lead with your hips, not your shoulders, on the way down.'},
+      {bad:R.filter(r=>!r.even).length, text:'Share the load.', next:'Both knees should bend the same amount. Even them out.'}
+    ]);
+    return {
+      head:`${N} squat${N>1?'s':''} logged`,
+      sub:'Depth measured at the lowest point of each rep.',
+      stats:[['Reps counted',N],['Reached good depth',`${good} of ${N}`],['Even left and right',`${R.filter(r=>r.even).length} of ${N}`]],
+      focus: f?f.text:'Strong, balanced set.',
+      next: f?f.next:'Hold this depth and add a few reps.'
+    };
+  }
+};
+
+/* ---------- LUNGE ---------- */
+const LUNGE={
+  id:'lunge', sport:'Fitness', label:'Lunge', type:'rep', facing:'Side on',
+  blurb:'Front knee to a right angle, tall trunk.',
+  setup:'Stand side on, whole body in frame. Step one foot forward and lower into the lunge.',
+  unit:'reps',
+  gauge:{leftLabel:'Deep', rightLabel:'Standing', min:60, max:180, bandLow:80, bandHigh:105, read:m=>Math.min(m.kneeL ?? 180, m.kneeR ?? 180)},
+  init:()=>({count:0, phase:'up', minFront:180, minBack:180, maxLean:0, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible || m.kneeL==null || m.kneeR==null) return WAIT('Step into frame');
+    const front=Math.min(m.kneeL,m.kneeR), back=Math.max(m.kneeL,m.kneeR);
+    if(s.phase==='down'){ s.minFront=Math.min(s.minFront,front); s.minBack=Math.min(s.minBack,back); s.maxLean=Math.max(s.maxLean,m.torsoLean); }
+    let repDelta=0;
+    if(s.phase==='up' && front<140){ s.phase='down'; s.minFront=front; s.minBack=back; s.maxLean=m.torsoLean; }
+    else if(s.phase==='down' && front>160){
+      const frontGood=s.minFront>=80 && s.minFront<=110;
+      const backBent=s.minBack<140;
+      const upright=s.maxLean<=45;
+      s.records.push({frontGood,backBent,upright});
+      s.count++; repDelta=1; s.phase='up'; s.minFront=180; s.minBack=180;
+    }
+    let status,cue,phase;
+    if(s.phase==='up'){ status='waiting'; cue='Lower into the lunge'; phase='Standing'; }
+    else{
+      phase='Lunging';
+      if(front>=80 && front<=110){ status='good'; cue='Good — front knee bent'; }
+      else if(front>110){ status='adjust'; cue='Lower'; }
+      else{ status='adjust'; cue='Ease up a little'; }
+      if(m.torsoLean>45){ status='adjust'; cue='Stand tall'; }
+    }
+    return {status,cue,phase,repDelta};
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No full lunges counted yet.','Step forward, bend the front knee toward a right angle, keep your trunk tall.');
+    const good=R.filter(r=>r.frontGood).length;
+    const f=focusFrom([
+      {bad:R.filter(r=>!r.frontGood).length, text:'Bend the front knee more.', next:'Aim the front thigh toward parallel, knee over the ankle.'},
+      {bad:R.filter(r=>!r.backBent).length, text:'Use the back leg.', next:'Lower the back knee toward the floor. Step a touch longer.'},
+      {bad:R.filter(r=>!r.upright).length, text:'Keep your trunk tall.', next:'Stay upright, do not fold forward over the front leg.'}
+    ]);
+    return {
+      head:`${N} lunge${N>1?'s':''} logged`,
+      sub:'Front knee depth measured at the bottom of each rep.',
+      stats:[['Reps counted',N],['Front knee bent well',`${good} of ${N}`],['Back leg lowered',`${R.filter(r=>r.backBent).length} of ${N}`]],
+      focus: f?f.text:'Clean, controlled lunges.',
+      next: f?f.next:'Add reps or slow the descent for more control.'
+    };
+  }
+};
+
+/* ---------- JUMPING JACKS ---------- */
+const JACKS={
+  id:'jacks', sport:'Fitness', label:'Jumping jacks', type:'rep', facing:'Face on',
+  blurb:'Full reach: arms overhead, feet wide.',
+  setup:'Face the camera, whole body in frame. Leave space above your head and to the sides.',
+  unit:'reps',
+  gauge:null,
+  init:()=>({count:0, phase:'closed', armsUp:false, wide:false, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible) return WAIT('Step into frame');
+    const armsUp=(m.nWrL.y < m.nNose.y) && (m.nWrR.y < m.nNose.y);
+    const sep=Math.abs(m.nAnL.x - m.nAnR.x);
+    const wide=sep > 1.5*m.shoulderWidth;
+    const open=armsUp && wide;
+    const closed=(m.nWrL.y > m.shoulderMidY) && (m.nWrR.y > m.shoulderMidY);
+    let repDelta=0;
+    if(s.phase==='closed' && open){ s.phase='open'; s.armsUp=armsUp; s.wide=wide; }
+    else if(s.phase==='open'){
+      s.armsUp=s.armsUp||armsUp; s.wide=s.wide||wide;
+      if(closed){ s.records.push({armsUp:s.armsUp, wide:s.wide}); s.count++; repDelta=1; s.phase='closed'; s.armsUp=false; s.wide=false; }
+    }
+    let status,cue,phase;
+    if(s.phase==='closed'){ status='waiting'; cue='Jump — arms up, feet wide'; phase='Closed'; }
+    else{
+      phase='Open';
+      if(armsUp && wide){ status='good'; cue='Full reach'; }
+      else if(!armsUp && wide){ status='adjust'; cue='Arms higher'; }
+      else if(armsUp && !wide){ status='adjust'; cue='Feet wider'; }
+      else{ status='adjust'; cue='Reach up and out'; }
+    }
+    return {status,cue,phase,repDelta};
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No full jumping jacks counted yet.','Face the camera, reach both arms above your head, jump your feet wide.');
+    const full=R.filter(r=>r.armsUp && r.wide).length;
+    const f=focusFrom([
+      {bad:R.filter(r=>!r.armsUp).length, text:'Reach higher.', next:'Bring both hands fully above your head each rep.'},
+      {bad:R.filter(r=>!r.wide).length, text:'Jump wider.', next:'Take your feet clearly past shoulder width.'}
+    ]);
+    return {
+      head:`${N} jumping jack${N>1?'s':''} logged`,
+      sub:'Each rep checked for full arm reach and wide feet.',
+      stats:[['Reps counted',N],['Full reach',`${full} of ${N}`],['Wide enough',`${R.filter(r=>r.wide).length} of ${N}`]],
+      focus: f?f.text:'Crisp, full-range reps.',
+      next: f?f.next:'Pick up the pace while keeping the full reach.'
+    };
+  }
+};
+
+/* ---------- BASKETBALL: FREE THROW / SET SHOT ---------- */
+const SHOT={
+  id:'shot', sport:'Basketball', label:'Free throw / set shot', type:'attempt', facing:'Side on',
+  blurb:'Loaded set, legs in, full release.',
+  setup:'Stand side on to your shooting arm, whole body in frame. Mime the shot, slow and clear.',
+  unit:'shots',
+  gauge:null,
+  init:()=>({count:0, phase:'rest', setElbow:180, peakElbow:0, loadedKnee:180, align:1, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible) return WAIT('Step into frame');
+    const useR=m.nWrR.y <= m.nWrL.y;            // shooting arm = higher hand
+    const elbow=useR ? m.elbowR : m.elbowL;
+    const wrist=useR ? m.nWrR : m.nWrL;
+    const elb=useR ? m.nElR : m.nElL;
+    if(elbow==null) return WAIT('Show your shooting arm');
+    const aboveHead=wrist.y < m.nNose.y;
+    const belowShoulder=wrist.y > m.shoulderMidY;
+    const align=Math.abs(elb.x - wrist.x);      // small = elbow under the wrist
+    let repDelta=0, status, cue, phase;
+
+    if(s.phase==='rest'){
+      status='waiting'; cue='Load into your set'; phase='Set up';
+      // cocked: elbow bent, hand between hips and head
+      if(elbow>=60 && elbow<=115 && wrist.y > m.nNose.y && wrist.y < m.hipMidY){
+        s.phase='set'; s.setElbow=elbow; s.loadedKnee=m.kneeAvg ?? 180; s.align=align; s.peakElbow=elbow;
+      }
+    } else if(s.phase==='set'){
+      phase='Set'; status='good'; cue='Now drive up';
+      s.setElbow=Math.min(s.setElbow,elbow);
+      s.loadedKnee=Math.min(s.loadedKnee, m.kneeAvg ?? 180);
+      s.align=Math.min(s.align, align);
+      s.peakElbow=Math.max(s.peakElbow,elbow);
+      if(elbow>150 && aboveHead){
+        const rec={
+          elbowLoaded:s.setElbow<=110,
+          legsUsed:s.loadedKnee<=160,
+          fullExtension:s.peakElbow>=160,
+          releaseHigh:true,
+          aligned:s.align<0.07
+        };
+        s.records.push(rec); s.count++; repDelta=1; s.phase='follow'; s._last=rec;
+      }
+    } else if(s.phase==='follow'){
+      phase='Follow through'; status='good'; cue='Hold the finish';
+      if(belowShoulder) s.phase='rest';         // reset for next shot
+    }
+    return {status:status||'waiting', cue:cue||'', phase:phase||'Set up', repDelta};
+  },
+  flash(rec){
+    const ok=[]; const fix=[];
+    (rec.elbowLoaded?ok:fix).push('elbow loaded');
+    (rec.legsUsed?ok:fix).push('legs in');
+    (rec.fullExtension?ok:fix).push('full release');
+    (rec.aligned?ok:fix).push('elbow lined up');
+    let s=`<b>Shot logged.</b> Strong: ${ok.join(', ')||'keep working'}.`;
+    if(fix.length) s+=` Watch: ${fix.join(', ')}.`;
+    return s;
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No shots logged yet.','Stand side on, load your set with the elbow bent, then extend fully overhead.');
+    const cnt=k=>R.filter(r=>r[k]).length;
+    const f=focusFrom([
+      {bad:N-cnt('aligned'), text:'Line up your elbow.', next:'At the set, keep the shooting elbow under your wrist, not flared out.'},
+      {bad:N-cnt('fullExtension'), text:'Finish high.', next:'Extend the arm fully on release, reach up and through.'},
+      {bad:N-cnt('legsUsed'), text:'Use your legs.', next:'Dip the knees and push up, do not shoot with the arm alone.'},
+      {bad:N-cnt('elbowLoaded'), text:'Load the set.', next:'Start with the elbow bent around a right angle before you rise.'}
+    ]);
+    return {
+      head:`${N} shot${N>1?'s':''} logged`,
+      sub:'Each shot checked at the set and at release.',
+      stats:[['Shots',N],['Elbow lined up',`${cnt('aligned')} of ${N}`],['Full release',`${cnt('fullExtension')} of ${N}`],['Legs used',`${cnt('legsUsed')} of ${N}`]],
+      focus: f?f.text:'Repeatable, balanced shot.',
+      next: f?f.next:'Groove it. Same set, same finish, every time.'
+    };
+  }
+};
+
+/* ---------- BADMINTON: OVERHEAD CLEAR / SMASH ---------- */
+const CLEAR={
+  id:'clear', sport:'Badminton', label:'Overhead clear / smash', type:'attempt', facing:'Face on',
+  blurb:'Cock, reach high, full arm at contact.',
+  setup:'Face the camera, slightly side on, whole body in frame. Mime the overhead hit.',
+  unit:'hits',
+  gauge:null,
+  init:()=>({count:0, phase:'rest', minPrepElbow:180, peakElbow:0, nonRacketUp:false, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible) return WAIT('Step into frame');
+    const useR=m.nWrR.y <= m.nWrL.y;            // racket arm = higher hand
+    const elbow=useR ? m.elbowR : m.elbowL;
+    const wrist=useR ? m.nWrR : m.nWrL;
+    const other=useR ? m.nWrL : m.nWrR;
+    if(elbow==null) return WAIT('Raise your racket arm');
+    const aboveHead=wrist.y < m.nNose.y;
+    const nonRacketRaised=other.y < m.shoulderMidY;
+    let repDelta=0, status, cue, phase;
+
+    if(s.phase==='rest'){
+      status='waiting'; cue='Raise and cock your arm'; phase='Prep';
+      if(wrist.y < m.shoulderMidY && elbow < 130){
+        s.phase='prep'; s.minPrepElbow=elbow; s.peakElbow=elbow; s.nonRacketUp=nonRacketRaised;
+      }
+    } else if(s.phase==='prep'){
+      phase='Prep'; status='good'; cue='Reach up and hit';
+      s.minPrepElbow=Math.min(s.minPrepElbow,elbow);
+      s.peakElbow=Math.max(s.peakElbow,elbow);
+      s.nonRacketUp=s.nonRacketUp||nonRacketRaised;
+      if(elbow>150 && aboveHead){
+        const rec={
+          contactHigh:true,
+          fullExtension:s.peakElbow>=160,
+          cocked:s.minPrepElbow<=120,
+          nonRacketUp:s.nonRacketUp
+        };
+        s.records.push(rec); s.count++; repDelta=1; s.phase='follow'; s._last=rec;
+      }
+    } else if(s.phase==='follow'){
+      phase='Follow through'; status='good'; cue='Good — recover';
+      if(wrist.y > m.shoulderMidY) s.phase='rest';
+    }
+    return {status:status||'waiting', cue:cue||'', phase:phase||'Prep', repDelta};
+  },
+  flash(rec){
+    const ok=[]; const fix=[];
+    (rec.contactHigh?ok:fix).push('high contact');
+    (rec.fullExtension?ok:fix).push('full arm');
+    (rec.cocked?ok:fix).push('good cock');
+    (rec.nonRacketUp?ok:fix).push('non-racket arm up');
+    let s=`<b>Hit logged.</b> Strong: ${ok.join(', ')||'keep working'}.`;
+    if(fix.length) s+=` Watch: ${fix.join(', ')}.`;
+    return s;
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No overhead hits logged yet.','Cock the racket arm behind your head, then reach up and hit at full stretch.');
+    const cnt=k=>R.filter(r=>r[k]).length;
+    const f=focusFrom([
+      {bad:N-cnt('fullExtension'), text:'Hit at full stretch.', next:'Straighten the arm fully at contact, reach to your highest point.'},
+      {bad:N-cnt('nonRacketUp'), text:'Lead with the other arm.', next:'Point your non-racket hand up at the shuttle for balance and aim.'},
+      {bad:N-cnt('cocked'), text:'Load the swing.', next:'Bend the elbow behind your head before you reach up to hit.'}
+    ]);
+    return {
+      head:`${N} overhead hit${N>1?'s':''} logged`,
+      sub:'Each hit checked at the cock and at contact.',
+      stats:[['Hits',N],['Full arm at contact',`${cnt('fullExtension')} of ${N}`],['Non-racket arm up',`${cnt('nonRacketUp')} of ${N}`],['Loaded swing',`${cnt('cocked')} of ${N}`]],
+      focus: f?f.text:'High, clean contact.',
+      next: f?f.next:'Keep the contact point high and add some pace.'
+    };
+  }
+};
+
+function blankReport(head,next){
+  return {head, sub:'Nothing was counted this time.', stats:[], focus:'Try again.', next};
+}
+
+/* ===== SEGMENT: Registry, grouped by sport ===== */
+const MOVES={squat:SQUAT, lunge:LUNGE, jacks:JACKS, shot:SHOT, clear:CLEAR};
+const SPORTS=[
+  {name:'Fitness', moves:['squat','lunge','jacks']},
+  {name:'Basketball', moves:['shot']},
+  {name:'Badminton', moves:['clear']}
+];
+
+/* ============================================================= */
+/* SEGMENT: Application state + DOM                              */
+/* ============================================================= */
+let active=null, state=null;
+let landmarker=null, drawer=null, stream=null;
+let running=false, rafId=0, lastVideoTime=-1;
+
+const $=id=>document.getElementById(id);
+const screens={home:$('home'), coach:$('coach'), summary:$('summary')};
+const video=$('video'), canvas=$('overlay'), ctx=canvas.getContext('2d');
+
+const STATUS={
+  good:{cls:'good', ic:'✓', word:'Good'},
+  adjust:{cls:'adjust', ic:'!', word:'Adjust'},
+  off:{cls:'off', ic:'✕', word:'Off'},
+  waiting:{cls:'wait', ic:'•', word:'Ready'}
+};
+const SKELCOL={good:'#39d98a', adjust:'#ffb020', off:'#ff5d5d', wait:'#5bd1ff'};
+
+/* ===== SEGMENT: Build the home screen ===== */
+function buildHome(){
+  const root=$('moveList');
+  root.innerHTML='';
+  for(const sp of SPORTS){
+    const sec=document.createElement('section'); sec.className='sport';
+    const h=document.createElement('h2'); h.textContent=sp.name; sec.appendChild(h);
+    const grid=document.createElement('div'); grid.className='cardgrid';
+    for(const id of sp.moves){
+      const mv=MOVES[id];
+      const b=document.createElement('button'); b.className='movecard'; b.dataset.move=id;
+      b.innerHTML=`<span class="name">${mv.label}</span>`+
+        `<span class="facing">${mv.facing} · ${mv.type==='rep'?'counts reps':'logs attempts'}</span>`+
+        `<span class="blurb">${mv.blurb}</span>`+
+        `<span class="go">Open →</span>`;
+      b.addEventListener('click',()=>chooseMove(id));
+      grid.appendChild(b);
+    }
+    sec.appendChild(grid); root.appendChild(sec);
+  }
+}
+
+/* ===== SEGMENT: Navigation ===== */
+function show(name){
+  for(const k in screens) screens[k].classList.toggle('is-active', k===name);
+}
+function chooseMove(id){
+  active=MOVES[id]; state=active.init();
+  $('coachTitle').textContent=active.label;
+  $('coachSport').textContent=active.sport;
+  $('setupHint').textContent=active.setup;
+  $('angleHint').textContent='Camera: '+active.facing.toLowerCase();
+  $('countCap').textContent=active.unit;
+  $('countNum').textContent='0';
+  // gauge config
+  const g=$('gauge');
+  if(active.gauge){
+    g.classList.add('show');
+    $('gaugeL').textContent=active.gauge.leftLabel;
+    $('gaugeR').textContent=active.gauge.rightLabel;
+    const {min,max,bandLow,bandHigh}=active.gauge;
+    $('gaugeBand').style.left=(clamp01((bandLow-min)/(max-min))*100)+'%';
+    $('gaugeBand').style.width=(clamp01((bandHigh-bandLow)/(max-min))*100)+'%';
+  } else { g.classList.remove('show'); }
+  $('flash').classList.remove('show');
+  screens.coach.className='screen coach-pre is-active';
+  show('coach');
+}
+function backHome(){ stopCamera(); show('home'); }
+
+/* ===== SEGMENT: Model + camera ===== */
+async function ensureModel(){
+  if(landmarker) return;
+  const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10/wasm");
+  const opts=(delegate)=>({
+    baseOptions:{
+      modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      delegate
+    },
+    runningMode:"VIDEO", numPoses:1,
+    minPoseDetectionConfidence:0.5, minPosePresenceConfidence:0.5, minTrackingConfidence:0.5
+  });
+  try{ landmarker=await PoseLandmarker.createFromOptions(vision, opts("GPU")); }
+  catch(e){ landmarker=await PoseLandmarker.createFromOptions(vision, opts("CPU")); }
+  drawer=new DrawingUtils(ctx);
+}
+
+async function startCamera(){
+  // secure-context guard: browsers block the camera off https / localhost
+  if(!window.isSecureContext){
+    showOverlay('Camera is blocked here',
+      `<p>Your browser only allows the camera when the page is served over <b>https</b> or from <b>localhost</b>.</p>
+       <p>Opening the file straight from disk will not work. Two fixes:</p>
+       <p>1. Put it on GitHub Pages and open the <code>https</code> link.<br>
+          2. Or serve it locally, then open <code>http://localhost:8000</code>.</p>`, true);
+    return;
+  }
+  try{
+    showOverlay('Loading the pose model', '<p>This step needs internet the first time. A few seconds.</p>', false);
+    await ensureModel();
+    showOverlay('Starting the camera', '<p>Allow camera access when your browser asks.</p>', false);
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    video.srcObject=stream;
+    await video.play();
+    sizeStage();
+    hideOverlay();
+    resetSmoothing();
+    running=true; lastVideoTime=-1;
+    screens.coach.className='screen coach-live is-active';
+    loop();
+  }catch(err){ handleStartError(err); }
+}
+
+function sizeStage(){
+  const vw=video.videoWidth||3, vh=video.videoHeight||4;
+  canvas.width=vw; canvas.height=vh;
+  $('stage').style.setProperty('--ar', vw+' / '+vh);
+}
+
+function stopCamera(){
+  running=false;
+  if(rafId) cancelAnimationFrame(rafId), rafId=0;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  video.srcObject=null;
+}
+
+function handleStartError(err){
+  const name=(err&&err.name)||'';
+  if(name==='NotAllowedError' || name==='SecurityError'){
+    showOverlay('Camera permission needed',
+      '<p>You blocked the camera, or your browser refused it. Allow camera access for this page, then start again.</p>', true);
+  } else if(name==='NotFoundError' || name==='DevicesNotFoundError'){
+    showOverlay('No camera found', '<p>This device has no camera the browser can use. Try one with a webcam.</p>', true);
+  } else {
+    showOverlay('Could not start',
+      `<p>Something stopped the camera or the model from loading. If you are offline, the model cannot download. Check your connection and try again.</p>
+       <p style="color:var(--ink-faint);font-size:.82rem">${name||'unknown error'}</p>`, true);
+  }
+  stopCamera();
+}
+
+/* ===== SEGMENT: Detection loop ===== */
+function loop(){
+  if(!running) return;
+  if(video.readyState>=2 && video.currentTime!==lastVideoTime){
+    lastVideoTime=video.currentTime;
+    let res=null;
+    try{ res=landmarker.detectForVideo(video, performance.now()); }
+    catch(e){ /* skip a bad frame */ }
+    onResults(res);
+  }
+  rafId=requestAnimationFrame(loop);
+}
+
+function onResults(res){
+  ctx.save();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.translate(canvas.width,0); ctx.scale(-1,1);   // mirror to match the selfie video
+  const has=res && res.landmarks && res.landmarks.length;
+  if(has){
+    const n=res.landmarks[0];
+    const w=(res.worldLandmarks && res.worldLandmarks[0]) || n;
+    let m=computeMetrics(n,w); m=smoothMetrics(m);
+    const out=active.update(m,state);
+    paint(out, m);
+    drawSkeleton(n, STATUS[out.status]?.cls || 'wait');
+    setTrack(m.bodyVisible);
+  } else {
+    paint({status:'waiting', cue:'Move into the frame', phase:'—', repDelta:0}, null);
+    setTrack(false);
+  }
+  ctx.restore();
+}
+
+function drawSkeleton(n, cls){
+  const col=SKELCOL[cls]||SKELCOL.wait;
+  drawer.drawConnectors(n, PoseLandmarker.POSE_CONNECTIONS, {color:col, lineWidth:4});
+  drawer.drawLandmarks(n, {color:'#ffffff', fillColor:col, lineWidth:1, radius:4});
+}
+
+/* ===== SEGMENT: Paint live feedback ===== */
+let lastCount=0;
+function paint(out, m){
+  // count
+  $('countNum').textContent=String(state.count);
+  if(out.repDelta){
+    const box=$('countBox'); box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+    if(active.type==='attempt' && state._last && active.flash){
+      const f=$('flash'); f.innerHTML=active.flash(state._last); f.classList.add('show');
+    }
+  }
+  // chip + cue + phase
+  const st=STATUS[out.status]||STATUS.waiting;
+  const chip=$('chip'); chip.className='chip '+st.cls;
+  $('chipIc').textContent=st.ic; $('chipWord').textContent=st.word;
+  $('cue').textContent=out.cue||'';
+  $('phase').textContent=out.phase||'—';
+  // gauge
+  if(active.gauge && m){
+    const v=active.gauge.read(m);
+    if(v!=null){
+      const {min,max}=active.gauge;
+      $('gaugeMarker').style.left=(clamp01((v-min)/(max-min))*100)+'%';
+    }
+  }
+  lastCount=state.count;
+}
+
+function setTrack(ok){
+  const b=$('trackBadge'); b.classList.toggle('ok', !!ok);
+  $('trackLbl').textContent = ok ? 'In frame' : 'Move into the frame';
+}
+
+/* ===== SEGMENT: Finish + summary ===== */
+function finishSet(){
+  stopCamera();
+  const r=active.summarise(state);
+  $('sumHead').textContent=r.head;
+  $('sumSub').textContent=r.sub;
+  const st=$('sumStats'); st.innerHTML='';
+  if(r.stats.length){
+    for(const [k,v] of r.stats){
+      const row=document.createElement('div'); row.className='stat';
+      row.innerHTML=`<span class="k">${k}</span><span class="v">${v}</span>`;
+      st.appendChild(row);
+    }
+    st.style.display='flex';
+  } else { st.style.display='none'; }
+  $('sumFocus').textContent=r.focus;
+  $('sumNext').textContent=r.next;
+  show('summary');
+}
+function goAgain(){
+  state=active.init();
+  $('countNum').textContent='0'; $('flash').classList.remove('show');
+  show('coach'); startCamera();
+}
+
+/* ===== SEGMENT: Overlay helpers ===== */
+function showOverlay(title, bodyHtml, closeable){
+  $('ovTitle').textContent=title;
+  $('ovBody').innerHTML=bodyHtml;
+  $('ovSpinner').style.display=closeable?'none':'block';
+  $('ovClose').style.display=closeable?'block':'none';
+  $('overlay').classList.add('show');
+}
+function hideOverlay(){ $('overlay').classList.remove('show'); }
+
+/* ===== SEGMENT: Wire controls ===== */
+$('backBtn').addEventListener('click', backHome);
+$('startBtn').addEventListener('click', startCamera);
+$('finishBtn').addEventListener('click', finishSet);
+$('resetBtn').addEventListener('click', ()=>{
+  state=active.init(); $('countNum').textContent='0'; $('flash').classList.remove('show'); resetSmoothing();
+});
+$('againBtn').addEventListener('click', goAgain);
+$('chooseBtn').addEventListener('click', ()=>{ stopCamera(); show('home'); });
+$('ovClose').addEventListener('click', hideOverlay);
+window.addEventListener('resize', ()=>{ if(running) sizeStage(); });
+
+/* ===== SEGMENT: Boot ===== */
+buildHome();
+</script>
+</body>
+</html>
