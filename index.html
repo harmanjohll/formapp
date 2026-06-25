@@ -737,16 +737,119 @@ const CLEAR={
   }
 };
 
+/* ---------- BADMINTON: NET LUNGE ---------- */
+const NETLUNGE={
+  id:'netlunge', sport:'Badminton', label:'Net lunge', type:'rep', facing:'Side on',
+  blurb:'Deep front knee, racket arm reaching to the net.',
+  setup:'Stand side on, a couple of steps back, whole body in frame. Step forward into a lunge and stretch your racket arm out toward the net, then push back to recover.',
+  unit:'lunges',
+  gauge:{leftLabel:'Deep', rightLabel:'Standing', min:60, max:180, bandLow:80, bandHigh:115, read:m=>Math.min(m.kneeL ?? 180, m.kneeR ?? 180)},
+  init:()=>({count:0, phase:'up', minFront:180, reached:false, maxLean:0, records:[]}),
+  update(m,s){
+    if(!m.bodyVisible || m.kneeL==null || m.kneeR==null) return WAIT('Step into frame');
+    const front=Math.min(m.kneeL,m.kneeR);
+    // reach = racket arm extended forward and below the shoulders (a net-height reach, not an overhead)
+    const reaching=(m.elbowR!=null && m.elbowR>=150 && m.nWrR.y>m.shoulderMidY) ||
+                   (m.elbowL!=null && m.elbowL>=150 && m.nWrL.y>m.shoulderMidY);
+    if(s.phase==='down'){ s.minFront=Math.min(s.minFront,front); s.reached=s.reached||reaching; s.maxLean=Math.max(s.maxLean,m.torsoLean); }
+    let repDelta=0;
+    if(s.phase==='up' && front<140){ s.phase='down'; s.minFront=front; s.reached=reaching; s.maxLean=m.torsoLean; }
+    else if(s.phase==='down' && front>160){
+      const depthGood=s.minFront>=75 && s.minFront<=120;
+      const reached=s.reached;
+      const steady=s.maxLean<=45;
+      s.records.push({depthGood,reached,steady});
+      s.count++; repDelta=1; s.phase='up'; s.minFront=180; s.reached=false;
+    }
+    let status,cue,phase;
+    if(s.phase==='up'){ status='waiting'; cue='Lunge forward to the net'; phase='Ready'; }
+    else{
+      phase='Lunging';
+      if(front>120){ status='adjust'; cue='Deeper into the lunge'; }
+      else if(!reaching){ status='adjust'; cue='Reach the racket out'; }
+      else{ status='good'; cue='Good — reach, then push back'; }
+      if(m.torsoLean>45){ status='adjust'; cue='Chest up, stay balanced'; }
+    }
+    return {status,cue,phase,repDelta};
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No net lunges counted yet.','Step forward into a deep lunge and stretch the racket arm out toward the net.');
+    const good=R.filter(r=>r.depthGood).length;
+    const f=focusFrom([
+      {bad:R.filter(r=>!r.depthGood).length, text:'Lunge deeper.', next:'Bend the front knee toward a right angle, knee tracking over the ankle.'},
+      {bad:R.filter(r=>!r.reached).length, text:'Reach further.', next:'Stretch the racket arm out in front to take the shuttle early at the net.'},
+      {bad:R.filter(r=>!r.steady).length, text:'Stay balanced.', next:'Keep your chest up and weight back so you can push off to recover.'}
+    ]);
+    return {
+      head:`${N} net lunge${N>1?'s':''} logged`,
+      sub:'Front knee depth and reach measured at the lowest point of each rep.',
+      stats:[['Reps counted',N],['Good depth',`${good} of ${N}`],['Reached out',`${R.filter(r=>r.reached).length} of ${N}`]],
+      focus: f?f.text:'Sharp lunges with a long reach.',
+      next: f?f.next:'Add reps, and push back to your ready base each time.'
+    };
+  }
+};
+
+/* ---------- BADMINTON: SPLIT STEP ---------- */
+const SPLITSTEP={
+  id:'split', sport:'Badminton', label:'Split step', type:'rep', facing:'Face on',
+  blurb:'Land wide and low on both feet, ready to push off.',
+  setup:'Face the camera, whole body in frame, with a little space to each side. From your toes, split into a wide, low ready base — then stand tall and repeat.',
+  unit:'splits',
+  gauge:{leftLabel:'Narrow', rightLabel:'Wide', min:0.8, max:2.2, bandLow:1.5, bandHigh:2.2, read:m=>Math.abs(m.nAnL.x-m.nAnR.x)/m.shoulderWidth},
+  init:()=>({count:0, phase:'tall', records:[]}),
+  update(m,s){
+    if(!m.bodyVisible || m.kneeAvg==null) return WAIT('Step into frame');
+    const sep=Math.abs(m.nAnL.x-m.nAnR.x)/m.shoulderWidth;   // stance width, in shoulder widths
+    const level=Math.abs(m.nAnL.y-m.nAnR.y)/m.shoulderWidth; // small = both feet land together
+    const bent=m.kneeAvg<=165, wide=sep>=1.4;
+    let repDelta=0, status, cue, phase;
+    if(s.phase==='tall'){
+      phase='Ready';
+      if(wide && bent){
+        s.records.push({wideEnough:sep>=1.5, lowEnough:m.kneeAvg<=158, even:level<=0.5});
+        s.count++; repDelta=1; s.phase='down';
+        status='good'; cue='Balanced base — now reset';
+      } else if(wide){ status='adjust'; cue='Sink lower'; }
+      else{ status='waiting'; cue='Split — wide and low'; }
+    } else {
+      phase='Landed';
+      if(sep<1.4){ status='adjust'; cue='Land wider'; }
+      else if(m.kneeAvg>165){ status='adjust'; cue='Sink lower'; }
+      else{ status='good'; cue='Balanced base — stand and reset'; }
+      if(m.kneeAvg>170 || sep<1.2) s.phase='tall';   // back to ready, arm for the next split
+    }
+    return {status:status||'waiting', cue:cue||'', phase:phase||'Ready', repDelta};
+  },
+  summarise(s){
+    const N=s.count, R=s.records;
+    if(!N) return blankReport('No split steps counted yet.','Bounce into a wide, low stance landing on both feet, then stand tall and repeat.');
+    const f=focusFrom([
+      {bad:R.filter(r=>!r.wideEnough).length, text:'Land wider.', next:'Take your feet clearly past shoulder width so you can push off in any direction.'},
+      {bad:R.filter(r=>!r.lowEnough).length, text:'Stay lower.', next:'Bend the knees more on landing to load your legs, ready to spring.'},
+      {bad:R.filter(r=>!r.even).length, text:'Land on both feet.', next:'Land both feet together and level, weight balanced, not on one side.'}
+    ]);
+    return {
+      head:`${N} split step${N>1?'s':''} logged`,
+      sub:'Stance width and knee bend checked at each landing.',
+      stats:[['Splits counted',N],['Wide enough',`${R.filter(r=>r.wideEnough).length} of ${N}`],['Low enough',`${R.filter(r=>r.lowEnough).length} of ${N}`]],
+      focus: f?f.text:'Balanced, athletic split steps.',
+      next: f?f.next:'Time it to land just as your opponent hits.'
+    };
+  }
+};
+
 function blankReport(head,next){
   return {head, sub:'Nothing was counted this time.', stats:[], focus:'Try again.', next};
 }
 
 /* ===== SEGMENT: Registry, grouped by sport ===== */
-const MOVES={squat:SQUAT, lunge:LUNGE, jacks:JACKS, shot:SHOT, clear:CLEAR};
+const MOVES={squat:SQUAT, lunge:LUNGE, jacks:JACKS, shot:SHOT, clear:CLEAR, netlunge:NETLUNGE, split:SPLITSTEP};
 const SPORTS=[
   {name:'Fitness', moves:['squat','lunge','jacks']},
   {name:'Basketball', moves:['shot']},
-  {name:'Badminton', moves:['clear']}
+  {name:'Badminton', moves:['clear','netlunge','split']}
 ];
 
 /* ============================================================= */
