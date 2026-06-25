@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Motion Coach drill spec",
+  "description": "Declarative, JSON-serialisable drill definition consumed by an archetype engine. Thresholds live here (not in engine code) so they can be tuned and sourced.",
+  "type": "object",
+  "required": ["meta", "archetype", "signal", "guard", "waitCue", "detect", "rubric", "cues", "summary", "provenance"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["id", "sport", "label", "type", "facing", "blurb", "setup", "unit"],
+      "properties": {
+        "id": { "type": "string" },
+        "sport": { "type": "string" },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["rep", "attempt"] },
+        "facing": { "type": "string", "enum": ["Side on", "Face on"] },
+        "blurb": { "type": "string" },
+        "setup": { "type": "string" },
+        "unit": { "type": "string" }
+      }
+    },
+    "archetype": { "type": "string", "enum": ["repByAngleHysteresis", "cyclicOpenClose", "attemptWithPhases"] },
+    "signal": { "type": "string" },
+    "guard": { "type": "string", "enum": ["kneeAvgReady", "kneesReady"] },
+    "waitCue": { "type": "string" },
+    "gauge": {
+      "type": "object",
+      "required": ["leftLabel", "rightLabel", "min", "max", "bandLow", "bandHigh", "signal"],
+      "properties": {
+        "leftLabel": { "type": "string" },
+        "rightLabel": { "type": "string" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "bandLow": { "type": "number" },
+        "bandHigh": { "type": "number" },
+        "signal": { "type": "string" }
+      }
+    },
+    "detect": {
+      "type": "object",
+      "required": ["enter", "exit", "track"],
+      "properties": {
+        "enter": { "type": "object", "required": ["op", "k"], "properties": { "op": { "type": "string", "enum": ["ge", "le", "gt", "lt", "eq"] }, "k": { "type": "number" } } },
+        "exit": { "type": "object", "required": ["op", "k"], "properties": { "op": { "type": "string", "enum": ["ge", "le", "gt", "lt", "eq"] }, "k": { "type": "number" } } },
+        "track": {
+          "type": "array",
+          "items": { "type": "object", "required": ["name", "feature", "agg"], "properties": { "name": { "type": "string" }, "feature": { "type": "string" }, "agg": { "type": "string", "enum": ["min", "max", "or"] } } }
+        }
+      }
+    },
+    "rubric": {
+      "type": "array",
+      "items": { "type": "object", "required": ["key", "type"], "properties": { "key": { "type": "string" }, "type": { "type": "string", "enum": ["cmp", "range", "absDiff", "bool"] } } }
+    },
+    "cues": {
+      "type": "object",
+      "required": ["up", "down"],
+      "properties": {
+        "up": { "type": "object", "required": ["cue", "phase"], "properties": { "cue": { "type": "string" }, "phase": { "type": "string" } } },
+        "down": { "type": "object", "required": ["phase", "conds", "default"], "properties": { "phase": { "type": "string" }, "conds": { "type": "array" }, "default": { "type": "object" } } }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["word", "headSuffix", "sub", "blankHead", "blankNext", "stats", "focus", "fallbackFocus", "fallbackNext"],
+      "properties": {
+        "word": { "type": "string" },
+        "headSuffix": { "type": "string" },
+        "sub": { "type": "string" },
+        "blankHead": { "type": "string" },
+        "blankNext": { "type": "string" },
+        "stats": { "type": "array" },
+        "focus": { "type": "array" },
+        "fallbackFocus": { "type": "string" },
+        "fallbackNext": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["status"],
+      "properties": { "status": { "type": "string", "enum": ["draft", "reviewed"] } }
+    }
+  }
+}
